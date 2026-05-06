@@ -6,13 +6,14 @@ import {useEffect} from 'react';
 import { Picker} from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { ScrollView } from 'react-native';
 
 const API_KEY = '0f45916f7aff8ba3e74d0bc6';
 
 export default function App(){
-  const [amount, setAmount] = useState("1");
-  const [from, setFrom] = useState("TRY");
-  const [to, setTo] = useState("USD");
+  const [amount, setAmount] = useState("");
+  const [from, setFrom] = useState("USD");
+  const [to, setTo] = useState("TRY");
   const [rates, setRates] = useState<Record<string, number>>({});
   const [result, setResult] = useState<string>("0");
   const [currencies, setCurrencies] = useState<string[]>([]);
@@ -20,6 +21,7 @@ export default function App(){
   const [liveUSD, setLiveUSD] = useState<number>(0);
   const [liveEUR, setLiveEUR] = useState<number>(0);
   const [openDropdown, setOpenDropdown] = useState<"from" | "to" | null>(null);
+  const [search, setSearch] = useState("");
 
 
   //doviz kurlarini apiden cekme
@@ -84,7 +86,10 @@ useEffect(() => {
   getHistory();
 }, [from, to]);
 
-
+//filtreleme
+const filtered = currencies.filter(c =>
+  c.toLowerCase().includes(search.toLowerCase())
+);
 
 return (
   
@@ -94,36 +99,58 @@ return (
       Keyboard.dismiss();
     }}
   >
-  <View style={styles.container}>
+  <ScrollView style={styles.container}>
 
     <Text style={styles.title}>Doviz Çevirici</Text>
 
+{/*FROM DROPSOWN*/ }
+<View style={styles.box}>
 
-    <View style={styles.box}>
-    <Text onPress={() => setOpenDropdown("from")} style={styles.dropdownLabel}>
+  {/* PARA BİRİMİ */}
+  <Text
+    onPress={() => {
+      setOpenDropdown("from");
+      setSearch("");
+    }}
+    style={styles.currencyText}
+  >
     {from}
   </Text>
 
+  {/* DROPDOWN */}
   {openDropdown === "from" && (
-    <Picker selectedValue={from} onValueChange={(val) => {
-      setFrom(val);
-      setOpenDropdown(null); // seçince kapat
-    }}>
-      {currencies.map(c => (
-        <Picker.Item key={c} label={c} value={c} />
+    <View style={styles.dropdown}>
+      <TextInput
+        placeholder="Ara..."
+        placeholderTextColor="#aaa"
+        value={search}
+        onChangeText={setSearch}
+        style={styles.searchBox}
+      />
+
+      {filtered.slice(0, 8).map((item) => (
+        <Text
+          key={item}
+          style={styles.item}
+          onPress={() => {
+            setFrom(item);
+            setOpenDropdown(null);
+          }}
+        >
+          {item}
+        </Text>
       ))}
-    </Picker>
+    </View>
   )}
 
-      <TextInput
-        style={styles.bigInput}
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-        placeholder="Miktar gir"
-        placeholderTextColor="#aaa"
-      />
-    </View>
+  {/* MİKTAR INPUT */}
+  <TextInput
+    style={styles.amountInput}
+    keyboardType="numeric"
+    value={amount}
+    onChangeText={setAmount}
+  />
+</View>
 
     <View style={styles.swapCircle}>
       <MaterialIcons
@@ -138,21 +165,52 @@ return (
       />
     </View>
 
-    <View style={styles.box}>
-        <Picker
-    selectedValue={to}
-    onValueChange={setTo}
-    style={styles.pickerTop}
-  >
-    {currencies.map((curr) => (
-      <Picker.Item key={curr} label={curr} value={curr} />
-    ))}
-  </Picker>
+{/*TO DROPDOWN*/}
+ <View style={styles.box}>
 
-      <Text style={styles.bigResult}>
-        {result} 
-      </Text>
+  {/* PARA BİRİMİ */}
+  <Text
+    onPress={() => {
+      setOpenDropdown("to");
+      setSearch("");
+    }}
+    style={styles.currencyText}
+  >
+    {to}
+  </Text>
+
+  {/* DROPDOWN */}
+  {openDropdown === "to" && (
+    <View style={styles.dropdown}>
+      <TextInput
+        placeholder="Ara..."
+        placeholderTextColor="#aaa"
+        value={search}
+        onChangeText={setSearch}
+        style={styles.searchBox}
+      />
+
+      {filtered.slice(0, 8).map((item) => (
+        <Text
+          key={item}
+          style={styles.item}
+          onPress={() => {
+            setTo(item);
+            setOpenDropdown(null);
+          }}
+        >
+          {item}
+        </Text>
+      ))}
     </View>
+  )}
+
+  {/* SONUÇ */}
+  <Text style={styles.resultText}>
+    {result}
+  </Text>
+
+</View>
 
     <View style={styles.topRow}>
       <View style={styles.rateCard}>
@@ -202,21 +260,21 @@ return (
         </Text>
 
         <View style={styles.cellRow}>
-          <Text style={{ color: usdUp ? "#00ff9d" : "#ff4d4d" }}>
+          <Text style={{ color: usdUp ? "#00ff9d" : "#ff4d4d", fontSize:16 }}>
             {usdToTry.toFixed(2)}
           </Text>
 
-          <Text style={{ color: usdUp ? "#00ff9d" : "#ff4d4d", marginLeft: 5 }}>
+          <Text style={{ color: usdUp ? "#00ff9d" : "#ff4d4d", marginLeft: 5, fontSize:16}}>
             {usdUp ? "↑" : "↓"}
           </Text>
         </View>
 
         <View style={styles.cellRow}>
-          <Text style={{ color: eurUp ? "#00ff9d" : "#ff4d4d", fontSize:10}}>
+          <Text style={{ color: eurUp ? "#00ff9d" : "#ff4d4d", fontSize:16}}>
             {eurToTry.toFixed(2)}
           </Text>
 
-          <Text style={{ color: eurUp ? "#00ff9d" : "#ff4d4d", marginLeft: 5, fontSize:10 }}>
+          <Text style={{ color: eurUp ? "#00ff9d" : "#ff4d4d", marginLeft: 5, fontSize:16 }}>
             {eurUp ? "↑" : "↓"}
           </Text>
         </View>
@@ -226,7 +284,7 @@ return (
   })}
 </View>
 
-  </View>
+  </ScrollView>
 </TouchableWithoutFeedback>
   );
 }
@@ -234,7 +292,6 @@ return (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     padding: 20,
     backgroundColor: "#9384b4",
   },
@@ -304,19 +361,14 @@ tableRow: {
 
 tableDate: {
   color: "#ccc",
-  fontSize: 13,
+  fontSize: 16,
 },
 
-tableCell: {
-  color: "#fff",
-  fontWeight: "bold",
+topRow: {
+  flexDirection: "row",
+  justifyContent: "space-around",
+  marginBottom: 20,
 },
-
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-  },
 
   rateCard: {
     backgroundColor: "#1c1c1c",
@@ -344,24 +396,42 @@ tableCell: {
   padding: 15,
   borderRadius: 15,
   marginBottom: 15,
+  position: "relative",
+},
+
+currencyText: {
+  color: "#aaa",
+  fontSize: 14,
+},
+
+amountInput: {
+  fontSize: 32,
+  color: "#fff",
+  marginTop: 10,
+},
+
+resultText: {
+  fontSize: 32,
+  color: "#00ffd5",
+  marginTop: 10,
+  fontWeight: "bold",
+},
+
+dropdown: {
+  position: "absolute",
+  top: 50,
+  left: 0,
+  right: 0,
+  backgroundColor: "#222",
+  borderRadius: 10,
+  maxHeight: 200,
+  zIndex: 1000,
+  elevation: 5,
 },
 
 label: {
   color: "#aaa",
   marginBottom: 5,
-},
-
-bigInput: {
-  fontSize: 28,
-  color: "#fff",
-  marginTop: 10,
-},
-
-bigResult: {
-  fontSize: 32,
-  color: "#fff",
-  marginTop: 10,
-  fontWeight: "bold",
 },
 
 swapCircle: {
@@ -370,12 +440,6 @@ swapCircle: {
   borderRadius: 50,
   padding: 12,
   marginVertical: 10,
-},
-
-pickerTop:{
-  backgroundColor:"#333",
-  marginBottom:5,
-  color:"#fff",
 },
 
 dropdownLabel:{
@@ -390,5 +454,20 @@ dropdownLabel:{
 cellRow:{
   flexDirection:"row",
   alignItems:"center",
-}
+},
+
+searchBox: {
+  backgroundColor: "#333",
+  color: "#fff",
+  padding: 8,
+  borderRadius: 8,
+  margin: 5,
+},
+
+item: {
+  color: "#fff",
+  padding: 10,
+  borderBottomWidth: 1,
+  borderBottomColor: "#333",
+},
   });
