@@ -5,6 +5,7 @@ import {useState} from 'react';
 import {useEffect} from 'react';
 import { Picker} from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
+import { TouchableWithoutFeedback, Keyboard } from 'react-native';
 
 const API_KEY = '0f45916f7aff8ba3e74d0bc6';
 
@@ -18,8 +19,7 @@ export default function App(){
   const [history, setHistory] = useState<Record<string, any>>({});
   const [liveUSD, setLiveUSD] = useState<number>(0);
   const [liveEUR, setLiveEUR] = useState<number>(0);
-  const [openFrom, setOpenFrom] = useState(false);
-  const [searchFrom, setSearchFrom] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<"from" | "to" | null>(null);
 
 
   //doviz kurlarini apiden cekme
@@ -87,18 +87,34 @@ useEffect(() => {
 
 
 return (
+  
+   <TouchableWithoutFeedback
+    onPress={() => {
+      setOpenDropdown(null);
+      Keyboard.dismiss();
+    }}
+  >
   <View style={styles.container}>
 
+    <Text style={styles.title}>Doviz Çevirici</Text>
+
+
     <View style={styles.box}>
-  <Picker
-    selectedValue={from}
-    onValueChange={setFrom}
-    style={styles.pickerTop}
-  >
-    {currencies.map((curr) => (
-      <Picker.Item key={curr} label={curr} value={curr} />
-    ))}
-  </Picker>
+    <Text onPress={() => setOpenDropdown("from")} style={styles.dropdownLabel}>
+    {from}
+  </Text>
+
+  {openDropdown === "from" && (
+    <Picker selectedValue={from} onValueChange={(val) => {
+      setFrom(val);
+      setOpenDropdown(null); // seçince kapat
+    }}>
+      {currencies.map(c => (
+        <Picker.Item key={c} label={c} value={c} />
+      ))}
+    </Picker>
+  )}
+
       <TextInput
         style={styles.bigInput}
         keyboardType="numeric"
@@ -153,39 +169,65 @@ return (
 
    <View style={styles.tableContainer}>
 
-  {/* HEADER */}
   <View style={styles.tableHeader}>
     <Text style={styles.tableHeaderText}>Tarih</Text>
     <Text style={styles.tableHeaderText}>USD (₺)</Text>
     <Text style={styles.tableHeaderText}>EUR (₺)</Text>
   </View>
 
-  {/* ROWS */}
-  {Object.entries(history).map(([date, value]: any) => {
+  {Object.entries(history)
+  .reverse()
+  .map(([date, value]: any, i, arr) => {
+
     const usdToTry = value["TRY"];
     const usdToEur = value["EUR"];
     const eurToTry = usdToTry / usdToEur;
 
+    const prevUsd =
+      i < arr.length - 1 ? arr[i + 1][1]["TRY"] : usdToTry;
+
+    const prevEur =
+      i < arr.length - 1
+        ? arr[i + 1][1]["TRY"] / arr[i + 1][1]["EUR"]
+        : eurToTry;
+
+    const usdUp = usdToTry > prevUsd;
+    const eurUp = eurToTry > prevEur;
+
     return (
       <View key={date} style={styles.tableRow}>
+
         <Text style={styles.tableDate}>
           {new Date(date).toLocaleDateString("tr-TR")}
         </Text>
 
-        <Text style={styles.tableCell}>
-          {usdToTry.toFixed(2)}
-        </Text>
+        <View style={styles.cellRow}>
+          <Text style={{ color: usdUp ? "#00ff9d" : "#ff4d4d" }}>
+            {usdToTry.toFixed(2)}
+          </Text>
 
-        <Text style={styles.tableCell}>
-          {eurToTry.toFixed(2)}
-        </Text>
+          <Text style={{ color: usdUp ? "#00ff9d" : "#ff4d4d", marginLeft: 5 }}>
+            {usdUp ? "↑" : "↓"}
+          </Text>
+        </View>
+
+        <View style={styles.cellRow}>
+          <Text style={{ color: eurUp ? "#00ff9d" : "#ff4d4d", fontSize:10}}>
+            {eurToTry.toFixed(2)}
+          </Text>
+
+          <Text style={{ color: eurUp ? "#00ff9d" : "#ff4d4d", marginLeft: 5, fontSize:10 }}>
+            {eurUp ? "↑" : "↓"}
+          </Text>
+        </View>
+
       </View>
     );
   })}
 </View>
 
   </View>
-
+</TouchableWithoutFeedback>
   );
 }
 
@@ -194,7 +236,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "#240566",
+    backgroundColor: "#9384b4",
   },
 
   title: {
@@ -247,7 +289,7 @@ tableHeader: {
 },
 
 tableHeaderText: {
-  color: "#00f2fe",
+  color: "#d3c1c1",
   fontWeight: "bold",
   fontSize: 14,
 },
@@ -286,11 +328,15 @@ tableCell: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+    padding:5,
+    margin:5,
   },
 
   rateValue: {
-    color: "#00f2fe",
+    color: "#97d2d2",
     fontSize: 16,
+    padding:5,
+    margin:5,
   },
 
   box: {
@@ -313,22 +359,36 @@ bigInput: {
 
 bigResult: {
   fontSize: 32,
-  color: "#00f2fe",
+  color: "#fff",
   marginTop: 10,
   fontWeight: "bold",
 },
 
 swapCircle: {
   alignSelf: "center",
-  backgroundColor: "#00c6ff",
+  backgroundColor: "#18c4eb",
   borderRadius: 50,
   padding: 12,
   marginVertical: 10,
 },
 
 pickerTop:{
-  backgroundColor:"#000",
+  backgroundColor:"#333",
   marginBottom:5,
   color:"#fff",
+},
+
+dropdownLabel:{
+  color:"#fff",
+  fontSize:20,
+  fontWeight:"bold",
+  backgroundColor:"#333",
+  padding:10,
+  borderRadius:8,
+},
+
+cellRow:{
+  flexDirection:"row",
+  alignItems:"center",
 }
   });
