@@ -118,15 +118,25 @@ return (
       Keyboard.dismiss();
     }}
   >
-  <ScrollView style={styles.container}>
+  <ScrollView style={styles.container} keyboardShouldPersistTaps='handled' contentContainerStyle={{paddingBottom:30}}>
 
     <Text style={styles.title}>Döviz Çevirici</Text>
+
+{openDropdown && (
+  <TouchableWithoutFeedback  onPress={() => {
+    setOpenDropdown(null);
+    Keyboard.dismiss();
+  }}>
+    <View style={styles.overlay} pointerEvents='box-none' />
+  </TouchableWithoutFeedback>
+)}
 
 <View style={{ position: "relative" }}>
 
   {/* FROM */}
-  <View style={[styles.box, { marginBottom: 35 }]}>
+  <View style={[styles.box, { marginBottom: 20 }]}>
     
+    <View style={styles.currencyRow}>
     <Text
       onPress={() => {
         setOpenDropdown("from");
@@ -136,17 +146,31 @@ return (
     >
       {from}
     </Text>
-
+    <MaterialIcons 
+    name="arrow-drop-down"
+    size={22}
+    color="#97d2d2"
+  />
+    </View>
     {openDropdown === "from" && (
       <View style={styles.dropdown}>
         <TextInput
           placeholder="Ara..."
           placeholderTextColor="#aaa"
           value={searchFrom}
-          onChangeText={setSearchFrom}
+          onChangeText={(text) => {
+          setSearchFrom(text);
+          const found = currencies.find(c =>
+          c.toLowerCase().includes(text.toLowerCase())
+          );
+          if (found) {
+          setFrom(found);
+         }
+        }}
           style={styles.searchBox}
         />
 
+        <ScrollView nestedScrollEnabled={true} style={{maxHeight:150}}>
         {filteredFrom.slice(0, 8).map((item) => (
           <Text
             key={item}
@@ -159,6 +183,7 @@ return (
             {item}
           </Text>
         ))}
+        </ScrollView>
       </View>
     )}
 
@@ -188,6 +213,7 @@ return (
   {/* TO */}
   <View style={[styles.box, { marginTop: 35 }]}>
     
+    <View style={styles.currencyRow}>
     <Text
       onPress={() => {
         setOpenDropdown("to");
@@ -197,6 +223,12 @@ return (
     >
       {to}
     </Text>
+    <MaterialIcons 
+    name="arrow-drop-down"
+    size={22}
+    color="#97d2d2"
+  />
+    </View>
 
     {openDropdown === "to" && (
       <View style={styles.dropdown}>
@@ -204,10 +236,19 @@ return (
           placeholder="Ara..."
           placeholderTextColor="#aaa"
           value={searchTo}
-          onChangeText={setSearchTo}
+          onChangeText={(text) => {
+         setSearchTo(text);
+         const found = currencies.find(c =>
+         c.toLowerCase().includes(text.toLowerCase())
+        );
+         if (found) {
+         setTo(found);
+        }
+      }}
           style={styles.searchBox}
         />
 
+        <ScrollView nestedScrollEnabled={true} style={{maxHeight:150}}>
         {filteredTo.slice(0, 8).map((item) => (
           <Text
             key={item}
@@ -219,7 +260,9 @@ return (
           >
             {item}
           </Text>
+          
         ))}
+        </ScrollView>
       </View>
     )}
 
@@ -232,17 +275,51 @@ return (
 
 
 {/*GUNCEL KUR*/ }
-    <View style={styles.topRow}>
-      <View style={styles.rateCard}>
-        <Text style={styles.rateTitle}>USD</Text>
-        <Text style={styles.rateValue}>{liveUSD.toFixed(2)} ₺</Text>
+<View style={styles.liveContainer}>
+
+  {/* HEADER */}
+  <View style={styles.liveHeader}>
+    <Text style={styles.liveTitle}>Güncel Kurlar</Text>
+    <Text style={styles.liveTime}>
+      {new Date().toLocaleTimeString("tr-TR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
+    </Text>
+  </View>
+
+  {/* CARDS */}
+  <View style={styles.liveRow}>
+
+    <View style={styles.liveCard}>
+      <View style={styles.iconCircle}>
+        <Text style={styles.iconText}>$</Text>
       </View>
 
-      <View style={styles.rateCard}>
-        <Text style={styles.rateTitle}>EUR</Text>
-        <Text style={styles.rateValue}>{liveEUR.toFixed(2)} ₺</Text>
-      </View>
+      <Text style={styles.cardTitle}>USD</Text>
+      <Text style={styles.cardValue}>{liveUSD.toFixed(2)} ₺</Text>
+
+      <Text style={styles.cardTime}>
+        Güncellendi: {new Date().toLocaleTimeString("tr-TR")}
+      </Text>
     </View>
+
+    <View style={styles.liveCard}>
+      <View style={styles.iconCircle}>
+        <Text style={styles.iconText}>€</Text>
+      </View>
+
+      <Text style={styles.cardTitle}>EUR</Text>
+      <Text style={styles.cardValue}>{liveEUR.toFixed(2)} ₺</Text>
+
+      <Text style={styles.cardTime}>
+        Güncellendi: {new Date().toLocaleTimeString("tr-TR")}
+      </Text>
+    </View>
+
+  </View>
+</View>
+
 
 {/*GECMIS GUNLERIN KUR DEGISIMI*/ }
    <View style={styles.tableContainer}>
@@ -350,7 +427,7 @@ const styles = StyleSheet.create({
   },
 
   tableContainer: {
-  marginTop: 25,
+  marginTop: 15,
   backgroundColor: "#287d40",
   borderRadius: 12,
   padding: 10,
@@ -386,14 +463,17 @@ tableDate: {
 
 topRow: {
   flexDirection: "row",
-  justifyContent: "space-around",
+  justifyContent: "space-between",
   marginBottom: 20,
+  marginTop:10,
 },
 
   rateCard: {
-    backgroundColor: "#1c1c1c",
+    backgroundColor: "#2a2a2a",
     padding: 10,
     borderRadius: 8,
+    alignItems:"center",
+    width:120,
   },
 
   rateTitle: {
@@ -405,7 +485,7 @@ topRow: {
   },
 
   rateValue: {
-    color: "#97d2d2",
+    color: "#97d2a8",
     fontSize: 16,
     padding:5,
     margin:5,
@@ -416,11 +496,14 @@ dropdown: {
   top: 50,
   left: 0,
   right: 0,
-  backgroundColor: "#222",
+  backgroundColor: "#5c5555",
   borderRadius: 10,
   maxHeight: 200,
   zIndex: 1000,
   elevation: 5,
+  borderColor:"#333",
+  borderWidth:1,
+  overflow:"hidden",
 },
 
 cellRow:{
@@ -438,7 +521,7 @@ box: {
 
 swapCircle: {
   position: "absolute",
-  top: "42%",
+  top: 110,
   left: 0,
   right: 0,
   alignItems: "center",
@@ -453,14 +536,20 @@ swapIcon: {
 },
 
 currencyText:{
-  color:"#97d2d2",
+  color:"#97d2a8",
   fontSize:25,
   fontWeight:"bold",
 },
 
+currencyRow:{
+  flexDirection:"row",
+  alignItems:"center",
+  justifyContent:"space-between",
+},
+
 amountInput:{
   backgroundColor: "#e8f0fe",
-  color: "#1967d2",
+  color: "#59bbd4",
   fontSize: 18,
   fontWeight: "600",
   paddingHorizontal: 18,
@@ -471,7 +560,7 @@ amountInput:{
 
 resultText:{
   backgroundColor:"#e8f0fe",
-  color:"#1967d2",
+  color:"#59bbd4",
   fontSize:18,
   fontWeight: "600",
   paddingHorizontal: 18,
@@ -484,13 +573,96 @@ searchBox:{
   backgroundColor:"#e8f0fe",
   color:"#000",
   paddingHorizontal:15,
-  paddingVertical:8,
+  paddingVertical:8,            
   borderRadius:10,
   margin:10,
 },
+
 item:{
   paddingHorizontal:15,
   paddingVertical:8,
-  color:"#fff",
-}
+  color:"#000",
+  borderBottomWidth:1,
+  borderBottomColor:"#ccc",
+},
+
+overlay:{
+  position:"absolute",
+  top:0,
+  left:0,
+  right:0,
+  bottom:0,
+  zIndex:5,
+},
+liveContainer: {
+  backgroundColor: "#1c1c1c",
+  borderRadius: 20,
+  padding: 15,
+  marginTop: 10,
+  marginBottom:10,
+},
+
+liveHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 10,
+},
+
+liveTitle: {
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: "bold",
+},
+
+liveTime: {
+  color: "#aaa",
+  fontSize: 12,
+},
+
+liveRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+},
+
+liveCard: {
+  backgroundColor: "#111",
+  borderRadius: 15,
+  padding: 15,
+  width: "48%",
+  alignItems: "center",
+},
+
+iconCircle: {
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  backgroundColor: "#2f5fa3",
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: 8,
+},
+
+iconText: {
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: "bold",
+},
+
+cardTitle: {
+  color: "#ccc",
+  fontSize: 14,
+},
+
+cardValue: {
+  color: "#fff",
+  fontSize: 20,
+  fontWeight: "bold",
+  marginVertical: 5,
+},
+
+cardTime: {
+  color: "#888",
+  fontSize: 11,
+},
   });
